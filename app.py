@@ -32,8 +32,13 @@ if missing_vars:
     st.error("Missing required environment variables:\n" + "\n".join(missing_vars))
     st.stop()
 
+
 # Initialize Groq LLM
-llm = ChatGroq(temperature=0, model=GROQ_MODEL, api_key=os.getenv("GROQ_API_KEY"))
+llm = ChatGroq(temperature=0, 
+               model=GROQ_MODEL, 
+               api_key=os.getenv("GROQ_API_KEY")
+               )
+
 
 # Load Main Legal Vectorstore 
 @st.cache_resource
@@ -52,6 +57,8 @@ except Exception as e:
     st.error(f"Failed to load main vectorstore: {e}")
     st.stop()
 
+
+
 # Load / Create Case Memory Vectorstore 
 @st.cache_resource
 def load_case_memory():
@@ -62,6 +69,7 @@ def load_case_memory():
         except Exception as e:
             st.warning(f"Could not load case memory index: {e}. Creating a new one.")
             case_memory = FAISS.from_texts(["dummy"], embeddings)
+
             # Remove the dummy entry so the index is empty but initialized
             dummy_id = list(case_memory.index_to_docstore_id.values())[0]
             case_memory.delete([dummy_id])
@@ -85,12 +93,14 @@ def search_case_memory(query: str, k: int = 3):
     docs = case_memory.similarity_search(query, k=k)
     return docs
 
+
 # Web Search Tool 
 try:
     search_tool = TavilySearchResults(max_results=3, tavily_api_key=os.getenv("TAVILY_API_KEY"))
 except Exception as e:
     st.error(f"Failed to initialize Tavily search tool: {e}")
     st.stop()
+
 
 # RAG Tool (Main Legal Document Retriever) 
 def retrieve_legal_docs(query: str) -> str:
@@ -210,6 +220,8 @@ Tone: Authoritative, structured, strategic, and practical — like a senior Supr
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
+
+
 # Initialize the agent with tools and system message
 agent = initialize_agent(
     tools=tools,
@@ -221,14 +233,18 @@ agent = initialize_agent(
     handle_parsing_errors=True
 )
 
+
 # Force the system prompt to be the first message in the prompt template
 # This ensures it's always used, even if memory overwrites it.
 agent.agent.llm_chain.prompt.messages[0].prompt.template = system_prompt
 
-# Streamlit UI 
+
+
+# Streamlit UI ##
 st.set_page_config(page_title="MyAIAdvocate", page_icon="⚖️")
-st.title("⚖️ MyAIAdvocate - Your Personal Legal Advisor")
+st.title("⚖️ MyAIAdvocate - Your Personal Advocate for Indian Law")
 st.markdown("Upload your case file (optional) and ask your legal questions. I'll retrieve relevant Indian laws and suggest strategies.")
+
 
 # Sidebar for file upload
 with st.sidebar:
@@ -255,6 +271,7 @@ with st.sidebar:
     st.divider()
     st.info("This tool provides general legal information based on Indian law. Not a substitute for professional legal advice.")
 
+
 # Main chat interface
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -279,6 +296,7 @@ if prompt := st.chat_input("Ask your legal question..."):
                 response = agent.run(full_query)
                 st.markdown(response)
                 st.session_state.messages.append({"role": "assistant", "content": response})
+
 
                 # Automatically store case summary if facts were provided
                 if context:

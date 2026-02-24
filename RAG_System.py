@@ -31,6 +31,7 @@ def create_vectorstore(chunks):
     vectorstore.save_local(VECTORSTORE_PATH)
     print(f"Vectorstore saved to {VECTORSTORE_PATH}")
 
+
 if __name__ == "__main__":
     print("Loading PDFs...")
     docs = load_documents()
